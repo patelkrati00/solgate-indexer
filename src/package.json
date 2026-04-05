@@ -1,0 +1,28 @@
+{
+  "name": "solana-indexer",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "tsx watch index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "client": "tsx client.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@solana/web3.js": "^1.98.0",
+    "@x402/core": "latest",
+    "@x402/hono": "latest",
+    "@x402/fetch": "latest",
+    "@x402/svm": "latest",
+    "better-sqlite3": "^9.4.3",
+    "dotenv": "^16.4.5",
+    "hono": "^4.6.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.5.4"
+  }
+}
