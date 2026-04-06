@@ -5,10 +5,11 @@ export async function fetchStats() {
   return res.json();
 }
 
-export async function fetchBlocks(limit = 20) {
-  const res = await fetch(BASE + "/blocks?limit=" + limit, {
-    headers: { "X-PAYMENT": "demo" },
-  });
+export async function fetchBlocks(limit = 20, offset = 0) {
+  const res = await fetch(
+    "http://localhost:3001/blocks?limit=" + limit + "&offset=" + offset,
+    { headers: { "X-PAYMENT": "demo" } }
+  );
   return res.json();
 }
 
