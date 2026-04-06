@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {fetchStats} from "@/lib/api";
 
 interface Stats {
   total_blocks: number;
@@ -12,12 +13,12 @@ interface Stats {
 export default function StatsBar() {
   const [stats, setStats] = useState<Stats | null>(null);
 
-  useEffect(() => {
-    fetch("/api/stats")
-      .then((r) => r.json())
-      .then(setStats)
-      .catch(console.error);
-  }, []);
+
+
+ useEffect(() => {
+  fetchStats().then(setStats).catch(console.error);
+}, []);
+
 
   const items = [
     { label: "Total Blocks", value: stats?.total_blocks ?? "—" },

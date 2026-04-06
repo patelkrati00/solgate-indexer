@@ -12,7 +12,7 @@ function required(key: string): string {
 export const config = {
   rpcUrl: process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com",
   dbPath: process.env.DB_PATH ?? "./indexer.db",
-  port: Number(process.env.PORT ?? 3000),
+  port: Number(process.env.PORT ?? 3001),
 
   walletAddress: required("RECEIVER_WALLET"),
 

@@ -1,3 +1,9 @@
+import StatsBar from "@/components/StatsBar";
+
 export default function Home() {
-  return <h1>Hello Krati 👋</h1>;
+  return (
+    <main>
+      <StatsBar />
+    </main>
+  );
 }

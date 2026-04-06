@@ -7,6 +7,7 @@
 
 import express, { Request, Response, NextFunction } from "express";
 import { paymentMiddleware, Network } from "x402-express";
+import cors from "cors";
 
 import { config } from "./config.js";
 import {
@@ -14,6 +15,7 @@ import {
     getTransactionsByWallet,
     getTransactionBySignature,
     getRecentBlocks,
+    getStats,
 } from "./db.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,6 +91,10 @@ function asyncHandler(
 // ─────────────────────────────────────────────────────────────────────────────
 
 const app = express();
+
+app.use(cors({
+  origin: "http://localhost:3000",
+}));
 
 // Parse JSON request bodies (needed if you ever add POST routes later).
 app.use(express.json());
@@ -258,6 +264,12 @@ app.get(
     })
 );
 
+app.get("/stats", (_req, res) => {
+  const stats = getStats();
+  res.json(stats);
+});
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 404 handler — catches any route we didn't define above
 // ─────────────────────────────────────────────────────────────────────────────
@@ -282,6 +294,7 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction): void =>
                 : err.message,                      // show details in dev
     } satisfies ErrorResponse);
 });
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Start
