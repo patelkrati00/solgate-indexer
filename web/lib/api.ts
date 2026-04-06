@@ -8,7 +8,7 @@ export async function fetchStats() {
 export async function fetchBlocks(limit = 20, offset = 0) {
   const res = await fetch(
     "http://localhost:3001/blocks?limit=" + limit + "&offset=" + offset,
-    { headers: { "X-PAYMENT": "demo" } }
+    // { headers: { "X-PAYMENT": "demo" } }
   );
   return res.json();
 }
