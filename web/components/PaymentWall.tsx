@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -19,12 +20,14 @@ interface Props {
 export default function PaymentWall({ paymentInfo, onPay }: Props) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
+  const [status, setStatus] = useState<"idle" | "paying" | "confirming" | "done">("idle");
+  const [txSig, setTxSig] = useState<string | null>(null);
 
   const handleRealPayment = async () => {
     if (!publicKey) return alert("Connect your wallet first!");
 
     try {
-      // Parse price — "0.001 SOL" → 0.001
+      setStatus("paying");
       const amount = parseFloat(paymentInfo.price.replace(" SOL", ""));
       const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
 
@@ -37,12 +40,18 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
       );
 
       const signature = await sendTransaction(transaction, connection);
+      setStatus("confirming");
+      setTxSig(signature);
 
-      // Wait for confirmation
       await connection.confirmTransaction(signature, "confirmed");
+      setStatus("done");
 
-      onPay(signature);
+      // small delay so user sees confirmed state
+      setTimeout(() => onPay(signature), 1500);
+
     } catch (err: any) {
+      setStatus("idle");
+      if (err.message?.includes("rejected")) return;
       alert("Payment failed: " + err.message);
     }
   };
@@ -91,7 +100,29 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
         ))}
       </div>
 
-      {/* Connect wallet first if not connected */}
+      {/* Status messages */}
+      {status === "paying" && (
+        <p style={{ fontSize: "12px", color: "#a1a1aa", marginBottom: "12px", letterSpacing: "1px" }}>
+          ⏳ Waiting for wallet confirmation...
+        </p>
+      )}
+      {status === "confirming" && (
+        <p style={{ fontSize: "12px", color: "#a1a1aa", marginBottom: "12px", letterSpacing: "1px" }}>
+          ⏳ Confirming on-chain...
+        </p>
+      )}
+      {status === "done" && (
+        <div style={{ marginBottom: "12px" }}>
+          <p style={{ fontSize: "12px", color: "#22c55e", marginBottom: "6px", letterSpacing: "1px" }}>
+            ✓ PAYMENT CONFIRMED
+          </p>
+          <p style={{ fontSize: "10px", color: "#555", wordBreak: "break-all" }}>
+            {txSig}
+          </p>
+        </div>
+      )}
+
+      {/* Wallet button or pay button */}
       {!connected ? (
         <div>
           <p style={{ fontSize: "11px", color: "#a1a1aa", marginBottom: "12px", textAlign: "center" }}>
@@ -111,20 +142,24 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
       ) : (
         <button
           onClick={handleRealPayment}
+          disabled={status !== "idle"}
           style={{
             width: "100%",
             padding: "14px",
-            backgroundColor: "#fff",
-            color: "#000",
+            backgroundColor: status === "done" ? "#14532d" : "#fff",
+            color: status === "done" ? "#22c55e" : "#000",
             border: "none",
             fontSize: "11px",
-            cursor: "pointer",
+            cursor: status !== "idle" ? "not-allowed" : "pointer",
             letterSpacing: "2px",
             fontWeight: 500,
             fontFamily: "inherit",
           }}
         >
-          PAY {paymentInfo.price} →
+          {status === "idle" && `PAY ${paymentInfo.price} →`}
+          {status === "paying" && "WAITING..."}
+          {status === "confirming" && "CONFIRMING..."}
+          {status === "done" && "✓ PAID"}
         </button>
       )}
 
