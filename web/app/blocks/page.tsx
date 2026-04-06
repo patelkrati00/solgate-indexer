@@ -70,7 +70,7 @@ export default function BlocksPage() {
       )}
 
       {!loading && paymentInfo && (
-        <PaymentWall paymentInfo={paymentInfo} onPay={handlePay} />
+        <PaymentWall storageKey="paid:blocks" paymentInfo={paymentInfo} onPay={handlePay} />
       )}
 
       {!loading && blocks.length > 0 && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -15,13 +15,25 @@ interface PaymentInfo {
 interface Props {
   paymentInfo: PaymentInfo;
   onPay: (signature: string) => void;
+  /**
+   * Unique localStorage key per page/feature.
+   * e.g. "paid:transactions" | "paid:blocks" | "paid:account"
+   * Each page stores its own signature independently.
+   */
+  storageKey: string;
 }
 
-export default function PaymentWall({ paymentInfo, onPay }: Props) {
+export default function PaymentWall({ paymentInfo, onPay, storageKey }: Props) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction, connected } = useWallet();
   const [status, setStatus] = useState<"idle" | "paying" | "confirming" | "done">("idle");
   const [txSig, setTxSig] = useState<string | null>(null);
+
+  // On mount: if this page was already paid, skip the wall immediately
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) onPay(saved);
+  }, [storageKey]);
 
   const handleRealPayment = async () => {
     if (!publicKey) return alert("Connect your wallet first!");
@@ -44,8 +56,11 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
       setTxSig(signature);
 
       await connection.confirmTransaction(signature, "confirmed");
-      setStatus("done");
 
+      // Persist signature — this page is unlocked for all future visits
+      localStorage.setItem(storageKey, signature);
+
+      setStatus("done");
       setTimeout(() => onPay(signature), 1500);
     } catch (err: any) {
       setStatus("idle");
@@ -65,7 +80,6 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
       fontFamily: "'Inter', 'Segoe UI', sans-serif",
     }}>
 
-      {/* Header badge */}
       <p style={{
         fontSize: "11px",
         color: "#888",
@@ -77,32 +91,19 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
         x402 · PAYMENT REQUIRED
       </p>
 
-      {/* Price */}
       <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "4px" }}>
-        <span style={{ fontSize: "36px", color: "#ffffff", fontWeight: 500, lineHeight: 1, letterSpacing: "-1px" }}>
+        <span style={{ fontSize: "36px", color: "#ffffff", fontWeight: 300, lineHeight: 1, letterSpacing: "-1px" }}>
           {paymentInfo.price.replace(" SOL", "")}
         </span>
         <span style={{ fontSize: "16px", color: "#ffffff", fontWeight: 600 }}>SOL</span>
       </div>
-      <p style={{
-        fontSize: "12px",
-        color: "#aaa",
-        marginBottom: "16px",
-        fontWeight: 400,
-      }}>
+      <p style={{ fontSize: "12px", color: "#aaa", marginBottom: "16px", fontWeight: 500 }}>
         Solana · {paymentInfo.network}
       </p>
 
       <div style={{ height: "0.5px", background: "#2a2a2a", marginBottom: "16px" }} />
 
-      <p style={{
-        fontSize: "11px",
-        color: "#fff",
-        letterSpacing: "1.5px",
-        marginBottom: "6px",
-        fontWeight: 700,
-        textTransform: "uppercase",
-      }}>
+      <p style={{ fontSize: "11px", color: "#fff", letterSpacing: "1.5px", marginBottom: "6px", fontWeight: 700, textTransform: "uppercase" }}>
         Receiver
       </p>
       <p style={{
@@ -120,107 +121,46 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
         {paymentInfo.receiver}
       </p>
 
-      <p style={{
-        fontSize: "11px",
-        color: "#fff",
-        letterSpacing: "1.5px",
-        marginBottom: "10px",
-        fontWeight: 700,
-        textTransform: "uppercase",
-      }}>
+      <p style={{ fontSize: "11px", color: "#fff", letterSpacing: "1.5px", marginBottom: "10px", fontWeight: 700, textTransform: "uppercase" }}>
         Instructions
       </p>
       <div style={{ marginBottom: "20px" }}>
         {paymentInfo.instructions.map((inst, i) => (
-          <div key={i} style={{
-            display: "flex",
-            gap: "12px",
-            marginBottom: "8px",
-            alignItems: "flex-start",
-          }}>
-            <span style={{
-              fontSize: "11px",
-              color: "#9945FF",
-              minWidth: "18px",
-              fontWeight: 700,
-              marginTop: "1px",
-            }}>
+          <div key={i} style={{ display: "flex", gap: "12px", marginBottom: "8px", alignItems: "flex-start" }}>
+            <span style={{ fontSize: "11px", color: "#9945FF", minWidth: "18px", fontWeight: 700, marginTop: "1px" }}>
               {String(i + 1).padStart(2, "0")}
             </span>
-            <span style={{
-              fontSize: "12px",
-              color: "#ccc",
-              lineHeight: 1.55,
-              fontWeight: 450,
-            }}>
+            <span style={{ fontSize: "12px", color: "#ccc", lineHeight: 1.55, fontWeight: 500 }}>
               {inst}
             </span>
           </div>
         ))}
       </div>
 
-      {/* Status messages */}
       {status === "paying" && (
-        <p style={{
-          fontSize: "13px",
-          color: "#facc15",
-          marginBottom: "14px",
-          letterSpacing: "0.5px",
-          fontWeight: 600,
-        }}>
+        <p style={{ fontSize: "13px", color: "#facc15", marginBottom: "14px", letterSpacing: "0.5px", fontWeight: 600 }}>
           ⏳ Waiting for wallet confirmation...
         </p>
       )}
       {status === "confirming" && (
-        <p style={{
-          fontSize: "13px",
-          color: "#facc15",
-          marginBottom: "14px",
-          letterSpacing: "0.5px",
-          fontWeight: 600,
-        }}>
+        <p style={{ fontSize: "13px", color: "#facc15", marginBottom: "14px", letterSpacing: "0.5px", fontWeight: 600 }}>
           ⏳ Confirming on-chain...
         </p>
       )}
       {status === "done" && (
-        <div style={{
-          marginBottom: "14px",
-          backgroundColor: "#0f2b1a",
-          padding: "12px 14px",
-          borderRadius: "3px",
-          border: "1px solid #166534",
-        }}>
-          <p style={{
-            fontSize: "13px",
-            color: "#4ade80",
-            marginBottom: "6px",
-            letterSpacing: "1px",
-            fontWeight: 700,
-          }}>
+        <div style={{ marginBottom: "14px", backgroundColor: "#0f2b1a", padding: "12px 14px", borderRadius: "6px", border: "0.5px solid #166534" }}>
+          <p style={{ fontSize: "13px", color: "#4ade80", marginBottom: "6px", letterSpacing: "1px", fontWeight: 700 }}>
             ✓ PAYMENT CONFIRMED
           </p>
-          <p style={{
-            fontSize: "11px",
-            color: "#6b7280",
-            wordBreak: "break-all",
-            fontWeight: 500,
-            lineHeight: 1.6,
-          }}>
+          <p style={{ fontSize: "11px", color: "#6b7280", wordBreak: "break-all", fontWeight: 500, lineHeight: 1.6 }}>
             {txSig}
           </p>
         </div>
       )}
 
-      {/* Wallet / Pay button */}
       {!connected ? (
         <div>
-          <p style={{
-            fontSize: "13px",
-            color: "#bbb",
-            marginBottom: "14px",
-            textAlign: "center",
-            fontWeight: 500,
-          }}>
+          <p style={{ fontSize: "13px", color: "#bbb", marginBottom: "14px", textAlign: "center", fontWeight: 500 }}>
             Connect your Phantom wallet to pay
           </p>
           <WalletMultiButton style={{
@@ -228,12 +168,12 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
             justifyContent: "center",
             backgroundColor: "#9945FF",
             color: "#fff",
-            borderRadius: "3px",
+            borderRadius: "8px",
             fontSize: "13px",
             fontWeight: 700,
             letterSpacing: "1.5px",
             fontFamily: "inherit",
-            padding: "14px",
+            padding: "13px",
           }} />
         </div>
       ) : (
@@ -263,14 +203,7 @@ export default function PaymentWall({ paymentInfo, onPay }: Props) {
         </button>
       )}
 
-      <p style={{
-        marginTop: "12px",
-        textAlign: "center",
-        fontSize: "10px",
-        color: "#444",
-        letterSpacing: "2px",
-        fontWeight: 600,
-      }}>
+      <p style={{ marginTop: "12px", textAlign: "center", fontSize: "10px", color: "#444", letterSpacing: "2px", fontWeight: 600 }}>
         POWERED BY x402 · SOLANA
       </p>
     </div>

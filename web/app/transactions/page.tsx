@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fetchTransactions } from "@/lib/api";
+import PaymentWall from "@/components/PaymentWall";
 
 interface Transaction {
   signature: string;
@@ -11,6 +12,16 @@ interface Transaction {
   status: "success" | "failed";
   accounts: string;
 }
+
+const PAYMENT_INFO = {
+  price: "0.0001 SOL",
+  network: "devnet",
+  receiver: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  instructions: [
+    "Pay once per search to fetch live transaction data.",
+    "Your payment unlocks results for this query.",
+  ],
+};
 
 const fmt = (ts: number | null) =>
   ts ? new Date(ts * 1000).toLocaleTimeString() : "—";
@@ -25,13 +36,25 @@ export default function TransactionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const search = async () => {
+  // Payment wall state
+  const [showPaymentWall, setShowPaymentWall] = useState(false);
+  const [pendingAccount, setPendingAccount] = useState("");
+
+  // Called when user hits Search
+  const handleSearch = () => {
     if (!account.trim()) return;
+    setPendingAccount(account.trim());
+    setShowPaymentWall(true);
+  };
+
+  // Called after payment is confirmed
+  const handlePaymentSuccess = async (signature: string) => {
+    setShowPaymentWall(false);
     setLoading(true);
     setError(null);
     setSearched(true);
     try {
-      const data = await fetchTransactions(account.trim());
+      const data = await fetchTransactions(pendingAccount);
       if (data.error) {
         setError(data.error);
         setTxns([]);
@@ -46,9 +69,15 @@ export default function TransactionsPage() {
   };
 
   return (
-    <main style={{ padding: "24px" }}>
+    <main style={{ padding: "24px", position: "relative" }}>
 
-      <p style={{ fontSize: "11px", fontFamily: "monospace", color: "#a1a1aa", letterSpacing: "1px", marginBottom: "16px" }}>
+      <p style={{
+        fontSize: "11px",
+        fontFamily: "monospace",
+        color: "#a1a1aa",
+        letterSpacing: "1px",
+        marginBottom: "16px",
+      }}>
         TRANSACTIONS
       </p>
 
@@ -58,7 +87,7 @@ export default function TransactionsPage() {
           type="text"
           value={account}
           onChange={(e) => setAccount(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && search()}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           placeholder="Enter Solana wallet address..."
           style={{
             flex: 1,
@@ -71,22 +100,77 @@ export default function TransactionsPage() {
             outline: "none",
           }}
         />
-        <button onClick={search} style={{
-          padding: "8px 20px",
-          backgroundColor: "#fff",
-          color: "#000",
-          border: "none",
-          fontFamily: "monospace",
-          fontSize: "13px",
-          cursor: "pointer",
-        }}>
+        <button
+          onClick={handleSearch}
+          style={{
+            padding: "8px 20px",
+            backgroundColor: "#fff",
+            color: "#000",
+            border: "none",
+            fontFamily: "monospace",
+            fontSize: "13px",
+            cursor: "pointer",
+          }}
+        >
           Search
         </button>
       </div>
 
+      {/* Payment wall modal overlay */}
+      {showPaymentWall && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+          }}
+          onClick={(e) => {
+            // Close if clicking the backdrop
+            if (e.target === e.currentTarget) setShowPaymentWall(false);
+          }}
+        >
+          <div style={{ position: "relative", width: "100%", maxWidth: "420px" }}>
+            {/* Close button */}
+            <button
+              onClick={() => setShowPaymentWall(false)}
+              style={{
+                position: "absolute",
+                top: "-36px",
+                right: "0",
+                background: "none",
+                border: "none",
+                color: "#666",
+                fontSize: "13px",
+                cursor: "pointer",
+                fontFamily: "monospace",
+                letterSpacing: "1px",
+              }}
+            >
+              ESC · CLOSE
+            </button>
+
+            <PaymentWall storageKey="paid:transactions"
+              paymentInfo={PAYMENT_INFO}
+              onPay={handlePaymentSuccess}
+            />
+          </div>
+        </div>
+      )}
+
       {/* States */}
-      {loading && <p style={{ color: "#a1a1aa", fontSize: "13px" }}>Loading...</p>}
-      {error && <p style={{ color: "#ef4444", fontSize: "13px", fontFamily: "monospace" }}>{error}</p>}
+      {loading && (
+        <p style={{ color: "#a1a1aa", fontSize: "13px" }}>Loading...</p>
+      )}
+      {error && (
+        <p style={{ color: "#ef4444", fontSize: "13px", fontFamily: "monospace" }}>
+          {error}
+        </p>
+      )}
       {searched && !loading && !error && txns.length === 0 && (
         <p style={{ color: "#a1a1aa", fontSize: "13px" }}>No transactions found.</p>
       )}
@@ -97,7 +181,17 @@ export default function TransactionsPage() {
           <thead>
             <tr style={{ borderBottom: "1px solid #222" }}>
               {["Signature", "Slot", "Time", "Fee (lamports)", "Status"].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: "#a1a1aa", fontWeight: 400, fontFamily: "monospace", fontSize: "11px" }}>
+                <th
+                  key={h}
+                  style={{
+                    textAlign: "left",
+                    padding: "8px 12px",
+                    color: "#a1a1aa",
+                    fontWeight: 400,
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                  }}
+                >
                   {h}
                 </th>
               ))}
@@ -119,14 +213,16 @@ export default function TransactionsPage() {
                   {tx.fee.toLocaleString()}
                 </td>
                 <td style={{ padding: "10px 12px" }}>
-                  <span style={{
-                    fontSize: "11px",
-                    fontFamily: "monospace",
-                    padding: "2px 8px",
-                    borderRadius: "99px",
-                    backgroundColor: tx.status === "success" ? "#14532d" : "#450a0a",
-                    color: tx.status === "success" ? "#86efac" : "#fca5a5",
-                  }}>
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontFamily: "monospace",
+                      padding: "2px 8px",
+                      borderRadius: "99px",
+                      backgroundColor: tx.status === "success" ? "#14532d" : "#450a0a",
+                      color: tx.status === "success" ? "#86efac" : "#fca5a5",
+                    }}
+                  >
                     {tx.status}
                   </span>
                 </td>
