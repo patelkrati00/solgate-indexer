@@ -3,8 +3,8 @@ import {
     PublicKey,
     ParsedTransactionWithMeta,
 } from "@solana/web3.js";
-import { config } from "./config";
-import { insertBlock, insertTransactions, Transaction } from "./db";
+import { config } from "./config.js";
+import { insertBlock, insertTransactions, Transaction } from "./db.js";
 
 // ---------------------------------------------------------------------------
 // Constants

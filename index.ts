@@ -13,15 +13,14 @@ async function main(): Promise<void> {
   console.log("[boot] Initialising database...");
   initDb();
 
+  console.log("[boot] Starting server...");
+  await import("./src/server.js"); // ✅ FIX (lazy import)
+
   console.log("[boot] Server is up. Starting indexer...");
 
-  // startIndexer() runs forever (while-true loop).
-  // We intentionally do NOT await it here — that would block the process
-  // and prevent graceful shutdown handlers from registering.
-  // Instead we attach a catch so unhandled indexer crashes surface clearly.
   startIndexer().catch((err) => {
     console.error("[boot] Indexer crashed with a fatal error:", err);
-    process.exit(1); // non-zero exit so Docker / PM2 knows to restart
+    process.exit(1);
   });
 
   console.log("[boot] All systems running.");

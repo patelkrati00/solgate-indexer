@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { config } from "./config";
+import { config } from "./config.js";
 
 // ---------------------------------------------------------------------------
 // Connection
@@ -71,29 +71,47 @@ export function initDb(): void {
 
 // prepare() compiles the SQL once and reuses it — much faster than exec()
 // inside a loop when indexing thousands of transactions.
-const insertTxStmt = db.prepare<Transaction>(`
-  INSERT OR IGNORE INTO transactions
-    (signature, slot, block_time, fee, status, accounts)
-  VALUES
-    (@signature, @slot, @block_time, @fee, @status, @accounts)
-`);
+let insertTxStmt: ReturnType<typeof db.prepare> | null = null;
+let insertBlockStmt: ReturnType<typeof db.prepare> | null = null;
 
-const insertBlockStmt = db.prepare<Block>(`
-  INSERT OR REPLACE INTO blocks
-    (slot, block_time, tx_count, indexed_at)
-  VALUES
-    (@slot, @block_time, @tx_count, @indexed_at)
-`);
+function getInsertTxStmt() {
+  if (!insertTxStmt) {
+    insertTxStmt = db.prepare<Transaction>(`
+      INSERT OR IGNORE INTO transactions
+        (signature, slot, block_time, fee, status, accounts)
+      VALUES
+        (@signature, @slot, @block_time, @fee, @status, @accounts)
+    `);
+  }
+  return insertTxStmt;
+}
+
+function getInsertBlockStmt() {
+  if (!insertBlockStmt) {
+    insertBlockStmt = db.prepare<Block>(`
+      INSERT OR REPLACE INTO blocks
+        (slot, block_time, tx_count, indexed_at)
+      VALUES
+        (@slot, @block_time, @tx_count, @indexed_at)
+    `);
+  }
+  return insertBlockStmt;
+}
 
 // db.transaction() wraps multiple inserts in a single SQLite transaction.
 // This is 10-100x faster than inserting one row at a time because
 // SQLite only flushes to disk once per transaction, not once per insert.
-export const insertTransactions = db.transaction((txns: Transaction[]) => {
-  for (const tx of txns) insertTxStmt.run(tx);
-});
+export function insertTransactions(txns: Transaction[]): void {
+  const stmt = getInsertTxStmt();
+  const run = db.transaction((txns: Transaction[]) => {
+    for (const tx of txns) stmt.run(tx);
+  });
+  run(txns);
+}
 
 export function insertBlock(block: Block): void {
-  insertBlockStmt.run(block);
+  const stmt = getInsertBlockStmt();
+  stmt.run(block);
 }
 
 // ---------------------------------------------------------------------------

@@ -8,13 +8,13 @@
 import express, { Request, Response, NextFunction } from "express";
 import { paymentMiddleware, Network } from "x402-express";
 
-import { config } from "./config";
+import { config } from "./config.js";
 import {
     getBlock,
     getTransactionsByWallet,
     getTransactionBySignature,
     getRecentBlocks,
-} from "./db";
+} from "./db.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -111,7 +111,7 @@ app.use(
         // This cast bypasses TS but is NOT fully safe.
         // Replace with Solana-native payment solution later.
 
-        config.walletAddress as unknown as `0x${string}`,                // who receives the payment
+        config.walletAddress as `0x${string}`,                // who receives the payment
         {
             // Each key is a route pattern; value is the payment config for that route.
             "GET /blocks": {
