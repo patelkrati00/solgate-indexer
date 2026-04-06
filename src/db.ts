@@ -100,18 +100,18 @@ export function insertBlock(block: Block): void {
 // Read queries
 // ---------------------------------------------------------------------------
 
-export function getTransactionsByWallet(wallet: string, limit = 50): Transaction[] {
+export function getTransactionsByWallet(wallet: string, limit = 50,offset=0): Transaction[] {
   // accounts is stored as a JSON array string e.g. '["ABC","DEF"]'
   // We use LIKE to search for the wallet address inside that string.
   // Good enough for a hackathon; production would use a separate accounts table.
   return db
-    .prepare<{ wallet: string; limit: number }>(
+    .prepare<{ wallet: string; limit: number;offset:number }>(
       `SELECT * FROM transactions
        WHERE accounts LIKE '%' || @wallet || '%'
        ORDER BY slot DESC
-       LIMIT @limit`
+       LIMIT @limit OFFSET @offset`
     )
-    .all({ wallet, limit }) as Transaction[];
+    .all({ wallet, limit, offset }) as Transaction[];
 }
 
 export function getTransactionBySignature(signature: string): Transaction | undefined {
@@ -128,12 +128,14 @@ export function getBlock(slot: number): Block | undefined {
     .get({ slot }) as Block | undefined;
 }
 
-export function getRecentBlocks(limit = 20): Block[] {
+export function getRecentBlocks(limit = 20, offset = 0): Block[] {
   return db
-    .prepare<{ limit: number }>(
-      `SELECT * FROM blocks ORDER BY slot DESC LIMIT @limit`
+    .prepare<{ limit: number; offset: number }>(
+      `SELECT * FROM blocks
+       ORDER BY slot DESC
+       LIMIT @limit OFFSET @offset`
     )
-    .all({ limit }) as Block[];
+    .all({ limit, offset }) as Block[];
 }
 
 // ---------------------------------------------------------------------------
