@@ -57,6 +57,8 @@ export default function BlocksPage() {
     load(newOffset, signature);
   };
 
+  
+
   return (
     <main style={{ padding: "24px" }}>
       <p style={{ fontSize: "11px", color: "#a1a1aa", letterSpacing: "1px", marginBottom: "16px" }}>
