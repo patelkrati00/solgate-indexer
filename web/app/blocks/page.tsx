@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { fetchBlocks } from "@/lib/api";
 import PaymentWall from "@/components/PaymentWall";
+import StatsBar from "@/components/StatsBar";
+
 
 interface Block {
   slot: number;
@@ -57,13 +59,16 @@ export default function BlocksPage() {
     load(newOffset, signature);
   };
 
-  
+
 
   return (
     <main style={{ padding: "24px" }}>
-      <p style={{ fontSize: "11px", color: "#a1a1aa", letterSpacing: "1px", marginBottom: "16px" }}>
+
+      <p style={{ fontSize: "15px", color: "#a1a1aa", letterSpacing: "1px", marginBottom: "16px" }}>
         BLOCKS
       </p>
+
+
 
       {loading && (
         <p style={{ color: "#a1a1aa", fontSize: "13px" }}>Loading...</p>
@@ -75,11 +80,12 @@ export default function BlocksPage() {
 
       {!loading && blocks.length > 0 && (
         <>
+         <StatsBar />
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #222" }}>
                 {["Slot", "Time", "Transactions", "Indexed At"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: "#a1a1aa", fontWeight: 400, fontSize: "11px" }}>
+                  <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: "#a1a1aa", fontWeight: 500, fontSize: "14px" }}>
                     {h}
                   </th>
                 ))}
@@ -101,7 +107,7 @@ export default function BlocksPage() {
             <button onClick={prev} disabled={offset === 0} style={{ padding: "6px 16px", backgroundColor: "transparent", border: "1px solid #222", color: offset === 0 ? "#444" : "#fff", fontSize: "12px", cursor: offset === 0 ? "not-allowed" : "pointer" }}>
               ← Prev
             </button>
-            <span style={{ color: "#a1a1aa", fontSize: "12px" }}>{offset + 1} – {offset + blocks.length}</span>
+            <span style={{ color: "#a1a1aa", fontSize: "14px" }}>{offset + 1} – {offset + blocks.length}</span>
             <button onClick={next} disabled={blocks.length < LIMIT} style={{ padding: "6px 16px", backgroundColor: "transparent", border: "1px solid #222", color: blocks.length < LIMIT ? "#444" : "#fff", fontSize: "12px", cursor: blocks.length < LIMIT ? "not-allowed" : "pointer" }}>
               Next →
             </button>

@@ -163,18 +163,26 @@ export default function PaymentWall({ paymentInfo, onPay, storageKey }: Props) {
           <p style={{ fontSize: "13px", color: "#bbb", marginBottom: "14px", textAlign: "center", fontWeight: 500 }}>
             Connect your Phantom wallet to pay
           </p>
-          <WalletMultiButton style={{
-            width: "100%",
-            justifyContent: "center",
-            backgroundColor: "#9945FF",
-            color: "#fff",
-            borderRadius: "8px",
-            fontSize: "13px",
-            fontWeight: 700,
-            letterSpacing: "1.5px",
-            fontFamily: "inherit",
-            padding: "13px",
-          }} />
+         <div style={{
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  width: "100%",
+}}>
+  <WalletMultiButton
+    style={{
+      width: "fit-content", // important change
+      backgroundColor: "#9945FF",
+      color: "#fff",
+      borderRadius: "8px",
+      fontSize: "13px",
+      fontWeight: 700,
+      letterSpacing: "1.5px",
+      fontFamily: "inherit",
+      padding: "13px 24px",
+    }}
+  />
+</div>
         </div>
       ) : (
         <button

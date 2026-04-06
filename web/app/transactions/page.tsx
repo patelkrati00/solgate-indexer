@@ -72,7 +72,7 @@ export default function TransactionsPage() {
     <main style={{ padding: "24px", position: "relative" }}>
 
       <p style={{
-        fontSize: "11px",
+        fontSize: "17px",
         fontFamily: "monospace",
         color: "#a1a1aa",
         letterSpacing: "1px",
@@ -96,7 +96,7 @@ export default function TransactionsPage() {
             border: "1px solid #222",
             color: "#fff",
             fontFamily: "monospace",
-            fontSize: "13px",
+            fontSize: "15px",
             outline: "none",
           }}
         />
@@ -108,7 +108,7 @@ export default function TransactionsPage() {
             color: "#000",
             border: "none",
             fontFamily: "monospace",
-            fontSize: "13px",
+            fontSize: "15px",
             cursor: "pointer",
           }}
         >
