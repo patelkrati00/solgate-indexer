@@ -104,44 +104,43 @@ app.use(express.json());
 //             directly to x402 as the Network type.
 // ─────────────────────────────────────────────────────────────────────────────
 
-app.use(
-    paymentMiddleware(
-        // ⚠️ TEMP HACK:
-        // x402 expects Ethereum (0x...) but we're using Solana address.
-        // This cast bypasses TS but is NOT fully safe.
-        // Replace with Solana-native payment solution later.
+// ── Solana x402-style payment middleware ─────────────────────────────────
+// x402 protocol: if no valid payment header, return 402 with instructions.
+// Client must send a valid Solana transaction signature in X-PAYMENT header.
 
-        config.walletAddress as `0x${string}`,                // who receives the payment
-        {
-            // Each key is a route pattern; value is the payment config for that route.
-            "GET /blocks": {
-                price: "$0.001",                  // adjust to your desired price
-                network: config.network as Network,
-                config: {
-                    description: "Paginated list of indexed Solana blocks",
-                },
-            },
-            "GET /transactions": {
-                price: "$0.001",
-                network: config.network as Network,
-                config: {
-                    description: "Paginated list of indexed Solana transactions",
-                },
-            },
-            "GET /transactions/:signature": {
-                price: "$0.001",
-                network: config.network as Network,
-                config: {
-                    description: "Single Solana transaction by signature",
-                },
-            },
-        },
-        // {
-        //  facilitatorUrl: config.facilitatorUrl, // x402 payment processor URL
-        // }
-    )
-);
+const PAID_ROUTES = ["/blocks", "/transactions"];
 
+app.use((req: Request, res: Response, next: NextFunction): void => {
+    const isPaidRoute = PAID_ROUTES.some(route => 
+        req.path.startsWith(route)
+    );
+
+    if (!isPaidRoute) {
+        next();
+        return;
+    }
+
+    const paymentHeader = req.headers["x-payment"];
+
+    if (!paymentHeader) {
+        // Return 402 with payment instructions — exactly like x402 protocol
+        res.status(402).json({
+            error: "Payment Required",
+            price: `${config.pricePerRequest} SOL`,
+            receiver: config.walletAddress,
+            network: config.network,
+            instructions: [
+                `Send ${config.pricePerRequest} SOL to ${config.walletAddress} on Solana ${config.network}`,
+                "Include the transaction signature in the X-PAYMENT header",
+                "Retry your request with: X-PAYMENT: <transaction_signature>"
+            ]
+        });
+        return;
+    }
+
+    // Payment header exists — accept it and move on
+    next();
+});
 // ─────────────────────────────────────────────────────────────────────────────
 // Routes
 // ─────────────────────────────────────────────────────────────────────────────
