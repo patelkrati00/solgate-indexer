@@ -46,14 +46,19 @@ function backoffDelay(attempt: number): number {
 // normalises both into a plain string array so db.ts never has to care.
 function extractAccounts(tx: any): string[] {
     try {
-        const keys = tx.message.accountKeys;
+        // Try parsed format first
+        const keys = tx.message?.accountKeys ?? [];
+        
+        if (keys.length === 0) return [];
 
-        return keys.map((k: any) =>
-            typeof k === "string"
-                ? k
-                : k.pubkey.toString()
-        );
-    } catch {
+        return keys.map((k: any) => {
+            if (typeof k === "string") return k;
+            if (k?.pubkey) return k.pubkey.toString();
+            if (k?.toBase58) return k.toBase58();
+            return String(k);
+        });
+    } catch (e) {
+        console.log("[indexer] extractAccounts failed:", e);
         return [];
     }
 }

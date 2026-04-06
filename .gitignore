@@ -18,3 +18,7 @@ yarn-error.log*
 
 # VS Code
 .vscode/
+
+indexer.db
+indexer.db-shm
+indexer.db-wal
