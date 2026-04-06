@@ -5,12 +5,14 @@ export async function fetchStats() {
   return res.json();
 }
 
-export async function fetchBlocks(limit = 20, offset = 0) {
+export async function fetchBlocks(limit = 20, offset = 0, signature: string | null = null) {
+  const headers: Record<string, string> = {};
+  if (signature) headers["X-PAYMENT"] = signature;
   const res = await fetch(
     "http://localhost:3001/blocks?limit=" + limit + "&offset=" + offset,
-    // { headers: { "X-PAYMENT": "demo" } }
+    { headers }
   );
-  return res.json();
+  return { status: res.status, data: await res.json() };
 }
 
 export async function fetchTransactions(account: string, limit = 20) {

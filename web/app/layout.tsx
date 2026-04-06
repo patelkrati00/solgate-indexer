@@ -1,4 +1,4 @@
-import SolanaWalletProvider from "@/components/SolanaWalletProvider";
+import SolanaWalletProvider from "@/components/WalletProvider";
 import Navbar from "@/components/Navbar";
 
 import "./globals.css";
